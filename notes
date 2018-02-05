@@ -1,0 +1,23 @@
+A sequence of immutable records called blocks -- BlockChain
+A blockchain has: 
+   - A list of blocks
+   - More than one nodes
+   - a consensus algorithm
+   - The nodes act as peers in the blockchain network
+A Block has
+   - a hash
+   - a nounce
+   - prev hash
+   - list of transactions
+   - index 
+Should have the following methods
+   - An end point to create a new block with transactions
+   - An end point to create a new digitally signed transactions
+   - A means to hash a block(SHA256 or SHA512)
+
+A consensus algorithm to check the validity of new blocks 
+
+A miner to add current transactions to a new block, and also a hash puzzle to create a sort of race amoung the miners(Also to stop attacks and spamming,ie miners should provide a proof of 
+work of sorts aka PoW)
+
+    
