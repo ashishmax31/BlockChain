@@ -1,41 +1,20 @@
 package bchain
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
-	"sync"
+	"log"
 	"time"
+
+	"github.com/ashishmax31/blockchain/core/bchain/datatypes"
+	"github.com/ashishmax31/blockchain/core/bchain/hashproblem"
+	"github.com/ashishmax31/blockchain/core/consensus"
 )
 
-type Block struct {
-	Index        int           `json:"index" `
-	Hash         string        `json:"hash"`
-	Timestamp    time.Time     `json:"created_at"`
-	PrevHash     string        `json:"previous_hash"`
-	Nounce       int64         `json:"nounce"`
-	Transactions []Transaction `json:"transactions"`
-}
-
-type Transaction struct {
-	Sender   string `json:"sender"`
-	Receiver string `json:"receiver"`
-	Amount   int64  `json:"amount"`
-}
-
-type blockChain struct {
-	sync.RWMutex
-	blkChain []Block
-}
-
-type currentTransactions struct {
-	sync.RWMutex
-	transactions []Transaction
-}
-
-var cTransactions currentTransactions
+var cTransactions datatypes.CurrentTransactions
 
 // BlockChain ... The actual in-memory immutable sequence of records called blocks.
+
+type blockChain datatypes.BlockChain
+
 var BlockChain blockChain
 
 func init() {
@@ -45,56 +24,54 @@ func init() {
 func (b *blockChain) blockChainLen() int {
 	b.RLock()
 	defer b.RUnlock()
-	return len(b.blkChain)
+	return len(b.BlkChain)
 }
 
-func (b *blockChain) ReadBlockChain() []Block {
+func (b *blockChain) ReadBlockChain() []datatypes.Block {
 	b.RLock()
 	defer b.RUnlock()
-	return b.blkChain
+	return b.BlkChain
 }
 
-func NewTransaction(t Transaction) int {
+func ReadBlockChain() []datatypes.Block {
+	BlockChain.RLock()
+	defer BlockChain.RUnlock()
+	return BlockChain.BlkChain
+}
+
+func NewTransaction(t datatypes.Transaction) int {
 	cTransactions.Lock()
 	defer cTransactions.Unlock()
-	cTransactions.transactions = append(cTransactions.transactions, t)
+	cTransactions.Transactions = append(cTransactions.Transactions, t)
 	return lastBlock().Index + 1
 }
 
-func lastBlock() Block {
+func lastBlock() datatypes.Block {
 	blkChainLen := BlockChain.blockChainLen()
 	if blkChainLen > 0 {
-		return BlockChain.blkChain[BlockChain.blockChainLen()-1]
+		return BlockChain.BlkChain[BlockChain.blockChainLen()-1]
 	}
 	// return a dummy block with hash `1` when the block chain is just born
-	return Block{Hash: "1"}
+	return datatypes.Block{Hash: "1"}
 }
 
-func (b *blockChain) NewBlock(nounce int64) Block {
-	newBlock := Block{
+func (b *blockChain) NewBlock(nounce int64) datatypes.Block {
+	newBlock := datatypes.Block{
 		Index:        b.blockChainLen() + 1,
 		PrevHash:     lastBlock().Hash,
 		Nounce:       nounce,
-		Transactions: cTransactions.transactions,
+		Transactions: cTransactions.Transactions,
 		Timestamp:    time.Now(),
 	}
-	newBlock.setHash()
+	newBlock.SetHash()
 	b.Lock()
 	defer b.Unlock()
-	cTransactions.transactions = []Transaction{}
-	b.blkChain = append(b.blkChain, newBlock)
+	cTransactions.Transactions = []datatypes.Transaction{}
+	b.BlkChain = append(b.BlkChain, newBlock)
 	return newBlock
 }
 
-func (b *Block) setHash() string {
-	hasher := sha256.New()
-	hasher.Write([]byte(fmt.Sprintf("%v", b)))
-	sha256Hash := hex.EncodeToString(hasher.Sum(nil))
-	b.Hash = sha256Hash
-	return sha256Hash
-}
-
-func genesis() Block {
+func genesis() datatypes.Block {
 	b := BlockChain.NewBlock(100)
 	return b
 }
@@ -102,7 +79,7 @@ func genesis() Block {
 func proofOfWork(prevProof int64) int64 {
 	var proof int64
 	for {
-		if validProof(prevProof, proof) == true {
+		if hashproblem.ValidProof(prevProof, proof) == true {
 			break
 		}
 		proof++
@@ -111,40 +88,22 @@ func proofOfWork(prevProof int64) int64 {
 	return proof
 }
 
-func validProof(prevProof int64, proof int64) bool {
-	str := fmt.Sprintf("%v%v", proof, prevProof)
-	hasher := sha256.New()
-	hasher.Write([]byte(str))
-	sha1Hash := hex.EncodeToString(hasher.Sum(nil))
-	// println(sha1Hash)
-	if sha1Hash[:4] == "0000" {
-		return true
-	}
-	return false
-}
-
 func Mine() {
+	cTransactions.RLock()
+	defer cTransactions.RUnlock()
+	if len(cTransactions.Transactions) == 0 {
+		// Nothing to add to the block as no transactions have happened.
+		// Not explicitly passing an error saying no transactions to mine, just silently returning.
+		return
+	}
 	lastBlck := lastBlock()
 	lastProof := lastBlck.Nounce
 	proof := proofOfWork(lastProof)
 	BlockChain.NewBlock(proof)
+	resp, ind := consensus.ValidateChain(BlockChain.ReadBlockChain())
+	if resp == true {
+		log.Println("Block validated")
+	} else {
+		log.Println(ind)
+	}
 }
-
-// func main() {
-// 	genesis()
-// 	t1 := transaction{Sender: "1", Receiver: "ashish", Amount: 10}
-// 	t2 := transaction{Sender: "ashish", Receiver: "akshay", Amount: 5}
-// 	newTransaction(t1)
-// 	newTransaction(t2)
-// 	fmt.Printf("%v\n", BlockChain.blkChain)
-// 	// proofOfWork(0)
-// 	mine()
-// 	fmt.Printf("%v\n", BlockChain.blkChain)
-// 	t2 = transaction{Sender: "ashish", Receiver: "akshay", Amount: 5}
-// 	t1 = transaction{Sender: "1", Receiver: "ashish", Amount: 10}
-// 	newTransaction(t1)
-// 	newTransaction(t2)
-// 	mine()
-// 	fmt.Printf("%v\n", BlockChain.blkChain)
-
-// }

@@ -25,10 +25,15 @@ type nodeSet map[string]Node
 var nodeList = nodes{
 	Nodes: make(nodeSet),
 }
+
+//MasterNode ... Hard code the masternode address for now. In future this will be elected by the nodes.
 var MasterNode = "127.0.0.1:3000"
+
+// CurrentNodeAddress ... Contains the address of the current node.
 var CurrentNodeAddress string
+
+// SyncList ... A channel to send the address of the newly registered node.
 var SyncList = make(chan string, 1000)
-var SyncedNodes = make(map[string]struct{})
 
 func RegNode(address string) bool {
 	_, present := nodeList.Nodes[address]
