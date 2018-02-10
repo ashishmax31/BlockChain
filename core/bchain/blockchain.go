@@ -107,3 +107,16 @@ func Mine() {
 		log.Println(ind)
 	}
 }
+
+func ReplaceBlockChain(newBlock []datatypes.Block) {
+	// First validate the incoming block chain, then update.
+	resp, _ := consensus.ValidateChain(newBlock)
+	if resp == true {
+		// Secure with mutual exclusion, don't want to fuck up.
+		BlockChain.Lock()
+		defer BlockChain.Unlock()
+		BlockChain.BlkChain = newBlock
+	} else {
+		log.Println("Recieved blockchain not valid!")
+	}
+}
