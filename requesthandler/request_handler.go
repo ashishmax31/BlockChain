@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/ashishmax31/blockchain/core/bchain"
+	"github.com/ashishmax31/blockchain/core/bchain/datatypes"
 	"github.com/ashishmax31/blockchain/core/nodes"
 )
 
@@ -112,7 +113,7 @@ func writeJSONResponse(payload []byte, w http.ResponseWriter) {
 	w.Write(payload)
 }
 
-func decodeBody(d *json.Decoder) (t bchain.Transaction, e error) {
+func decodeBody(d *json.Decoder) (t datatypes.Transaction, e error) {
 	e = d.Decode(&t)
 	return
 }

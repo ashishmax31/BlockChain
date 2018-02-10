@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	_ "github.com/ashishmax31/blockchain/core/consensus/crons"
+
 	"github.com/ashishmax31/blockchain/core/nodes"
 	"github.com/ashishmax31/blockchain/requesthandler"
 )
