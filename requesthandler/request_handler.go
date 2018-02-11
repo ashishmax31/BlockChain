@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ashishmax31/blockchain/requesthandler/requestvalidators"
+
 	"github.com/ashishmax31/blockchain/core/bchain"
 	"github.com/ashishmax31/blockchain/core/bchain/datatypes"
 	"github.com/ashishmax31/blockchain/core/nodes"
@@ -29,11 +31,17 @@ func NewTransaction(w http.ResponseWriter, req *http.Request) {
 	case "POST":
 		decoder := json.NewDecoder(req.Body)
 		obj, err := decodeBody(decoder)
+		err = requestvalidators.Validate(obj)
+		err = requestvalidators.SignPayload(&obj)
 		if err != nil {
 			writeErrorResponse(err.Error(), w)
 			return
 		}
-		index := bchain.NewTransaction(obj)
+		index, err := bchain.NewTransaction(obj)
+		if err != nil {
+			writeErrorResponse(err.Error()+":Couldnt verify the authenticity of the transaction", w)
+			return
+		}
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "text")
 		w.Write([]byte(fmt.Sprintf("The transaction will be forged in block number %d \n", index)))

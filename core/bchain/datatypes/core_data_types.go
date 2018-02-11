@@ -18,9 +18,10 @@ type Block struct {
 }
 
 type Transaction struct {
-	Sender   string `json:"sender"`
-	Receiver string `json:"receiver"`
-	Amount   int64  `json:"amount"`
+	Sender    string `json:"sender"`
+	Receiver  string `json:"receiver"`
+	Signature string `json:"signature"`
+	Amount    int64  `json:"amount"`
 }
 
 type BlockChain struct {

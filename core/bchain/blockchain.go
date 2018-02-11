@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/ashishmax31/blockchain/core/bchain/transactionvalidator"
+
 	"github.com/ashishmax31/blockchain/core/bchain/datatypes"
 	"github.com/ashishmax31/blockchain/core/bchain/hashproblem"
 	"github.com/ashishmax31/blockchain/core/consensus"
@@ -39,11 +41,12 @@ func ReadBlockChain() []datatypes.Block {
 	return BlockChain.BlkChain
 }
 
-func NewTransaction(t datatypes.Transaction) int {
+func NewTransaction(t datatypes.Transaction) (int, error) {
+	err := transactionvalidator.ValidateSignature(t)
 	cTransactions.Lock()
 	defer cTransactions.Unlock()
 	cTransactions.Transactions = append(cTransactions.Transactions, t)
-	return lastBlock().Index + 1
+	return lastBlock().Index + 1, err
 }
 
 func lastBlock() datatypes.Block {
