@@ -108,7 +108,7 @@ func syncNodeList() {
 }
 
 func SyncNode(address, addr string, syncFlag bool) {
-	if address == addr {
+	if (address == addr) && (syncFlag == false) {
 		return
 	}
 	log.Printf("[%s] Hitting %s with address %s \n", CurrentNodeAddress, address, addr)
